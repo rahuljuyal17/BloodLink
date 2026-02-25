@@ -31,16 +31,15 @@ if (!MONGODB_URI) {
 }
 
 
-// Socket.IO Logic
-io.on('connection', (socket) => {
-    console.log(`User Connected: ${socket.id}`);
+const initSocket = require('./socket');
 
-    socket.on('disconnect', () => {
-        console.log(`User Disconnected: ${socket.id}`);
-    });
-});
+// Socket.IO Logic
+initSocket(io);
 
 // Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/requests', require('./routes/requestRoutes'));
+
 app.get('/', (req, res) => {
     res.send('BloodLink API is running...');
 });
