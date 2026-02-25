@@ -1,5 +1,7 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
 import './index.css'
 
 // Placeholder for components we will build
@@ -11,12 +13,12 @@ const Home = () => (
         Real-Time Emergency Blood Donation Platform. Connect with donors within minutes.
       </p>
       <div className="flex gap-4 justify-center">
-        <button className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:-translate-y-1">
+        <Link to="/login" className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:-translate-y-1">
           Login
-        </button>
-        <button className="bg-white hover:bg-gray-50 text-primary-600 font-bold py-3 px-8 rounded-full shadow-lg border border-primary-200 transform transition hover:-translate-y-1">
+        </Link>
+        <Link to="/signup" className="bg-white hover:bg-gray-50 text-primary-600 font-bold py-3 px-8 rounded-full shadow-lg border border-primary-200 transform transition hover:-translate-y-1">
           Sign Up
-        </button>
+        </Link>
       </div>
     </div>
   </div>
@@ -27,6 +29,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
