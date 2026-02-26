@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import useAuthStore from './store/useAuthStore'
+import useSocket from './hooks/useSocket'
 import './index.css'
 
 const Home = () => (
@@ -27,6 +28,7 @@ const Home = () => (
 
 function App() {
   const { isAuthenticated } = useAuthStore();
+  useSocket();
 
   return (
     <BrowserRouter>

@@ -26,12 +26,44 @@ exports.createRequest = async (req, res) => {
 
         const savedRequest = await newRequest.save();
 
+        // Real-time notifications via Socket.IO
+        const io = req.app.get('io');
+
+        if (urgency === 'Urgent') {
+            // Notify all compatible donors within 5km
+            const nearbyDonors = await User.find({
+                role: 'Donor',
+                isAvailable: true,
+                bloodGroup: requiredBloodGroup,
+                location: {
+                    $near: {
+                        $geometry: { type: 'Point', coordinates: [parseFloat(longitude), parseFloat(latitude)] },
+                        $maxDistance: 5000
+                    }
+                }
+            });
+
+            nearbyDonors.forEach(donor => {
+                io.to(donor._id.toString()).emit('new-emergency', savedRequest);
+            });
+        } else {
+            // Notify all donors in the same district
+            const districtDonors = await User.find({
+                role: 'Donor',
+                isAvailable: true,
+                bloodGroup: requiredBloodGroup,
+                district
+            });
+
+            districtDonors.forEach(donor => {
+                io.to(donor._id.toString()).emit('new-emergency', savedRequest);
+            });
+        }
+
         res.status(201).json({
             message: 'Blood request created successfully',
             request: savedRequest
         });
-
-        // Note: Emitting socket events for matching donors will be handled by a dedicated service/socket logic later
 
     } catch (err) {
         console.error(err);
@@ -113,6 +145,13 @@ exports.acceptRequest = async (req, res) => {
         request.status = 'Accepted';
         request.matchedDonor = donorId;
         await request.save();
+
+        // Notify patient
+        const io = req.app.get('io');
+        io.to(request.patientId.toString()).emit('request-accepted', {
+            request,
+            donorId
+        });
 
         res.json({ message: 'Request accepted successfully', request });
     } catch (err) {
