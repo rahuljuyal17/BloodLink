@@ -52,7 +52,10 @@ exports.register = async (req, res) => {
                 name: savedUser.name,
                 email: savedUser.email,
                 role: savedUser.role,
-                bloodGroup: savedUser.bloodGroup
+                bloodGroup: savedUser.bloodGroup,
+                district: savedUser.district,
+                phoneNumber: savedUser.phoneNumber,
+                age: savedUser.age
             }
         });
     } catch (err) {
@@ -88,7 +91,10 @@ exports.login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                bloodGroup: user.bloodGroup
+                bloodGroup: user.bloodGroup,
+                district: user.district,
+                phoneNumber: user.phoneNumber,
+                age: user.age
             }
         });
     } catch (err) {
