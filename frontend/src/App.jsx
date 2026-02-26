@@ -9,17 +9,20 @@ import './index.css'
 
 const Home = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-    <div className="text-center max-w-2xl">
-      <h1 className="text-6xl font-black text-primary-600 mb-6 drop-shadow-xl tracking-tighter">BloodLink</h1>
-      <p className="text-xl text-gray-600 mb-8 leading-relaxed font-medium">
-        Connecting lives in real-time. Find donors within <span className="text-primary-600 font-bold underline decoration-wavy">5km</span> during emergencies.
+    <div className="text-center max-w-3xl">
+      <h1 className="text-7xl font-black text-gray-900 mb-6 drop-shadow-xl tracking-tighter leading-none">
+        Every Drop Counts. <br />
+        <span className="text-primary-600 italic">Every Second Matters.</span>
+      </h1>
+      <p className="text-xl text-gray-600 mb-10 leading-relaxed font-medium max-w-2xl mx-auto">
+        BloodLink is a high-precision real-time coordination platform designed to bridge the gap between life-saving donors and patients in critical need through <span className="text-primary-600 font-bold">intelligent geolocation matching.</span>
       </p>
-      <div className="flex gap-4 justify-center">
-        <Link to="/login" className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-2xl shadow-xl transform transition hover:-translate-y-1 active:scale-95">
-          Login
+      <div className="flex gap-6 justify-center">
+        <Link to="/login" className="bg-primary-600 hover:bg-primary-700 text-white font-black py-5 px-12 rounded-2xl shadow-2xl shadow-primary-200 transform transition hover:-translate-y-1 active:scale-95 text-lg">
+          Get Started
         </Link>
-        <Link to="/signup" className="bg-white hover:bg-gray-50 text-primary-600 font-bold py-4 px-10 rounded-2xl shadow-xl border border-primary-100 transform transition hover:-translate-y-1 active:scale-95">
-          Sign Up
+        <Link to="/signup" className="bg-white hover:bg-gray-50 text-gray-900 font-black py-5 px-12 rounded-2xl shadow-xl border border-gray-100 transform transition hover:-translate-y-1 active:scale-95 text-lg">
+          Join the Network
         </Link>
       </div>
     </div>
