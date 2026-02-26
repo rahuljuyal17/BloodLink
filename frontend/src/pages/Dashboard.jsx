@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import useAuthStore from '../store/useAuthStore';
 import useRequestStore from '../store/useRequestStore';
 import RequestModal from '../components/RequestModal';
+import LiveMap from '../components/LiveMap';
+import useSocket from '../hooks/useSocket';
 
 const Dashboard = () => {
     const { user, logout } = useAuthStore();
-    const { myRequests, matchingRequests, fetchMyRequests, fetchMatchingRequests, acceptRequest } = useRequestStore();
+    const { myRequests, matchingRequests, donorLocation, fetchMyRequests, fetchMatchingRequests, acceptRequest } = useRequestStore();
+    const { emitLocation } = useSocket();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
 
     useEffect(() => {
         if (user?.role === 'Patient') {
@@ -16,11 +20,39 @@ const Dashboard = () => {
         }
     }, [user]);
 
+    // Donor Location Tracking Logic
+    useEffect(() => {
+        let watchId;
+        if (isSharing && user?.role === 'Donor') {
+            const acceptedRequest = matchingRequests.urgentRequests?.find(r => r.status === 'Accepted' && r.matchedDonor === user.id)
+                || matchingRequests.normalRequests?.find(r => r.status === 'Accepted' && r.matchedDonor === user.id);
+
+            if (acceptedRequest) {
+                watchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const coords = [pos.coords.latitude, pos.coords.longitude];
+                        emitLocation(acceptedRequest.patientId, coords);
+                    },
+                    (err) => console.error(err),
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                alert("Please accept a request first to start tracking.");
+                setIsSharing(false);
+            }
+        }
+        return () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        };
+    }, [isSharing]);
+
     const handleAccept = async (id) => {
         if (window.confirm('Are you sure you want to accept this request?')) {
             await acceptRequest(id);
         }
     };
+
+    const acceptedRequestForPatient = myRequests.find(r => r.status === 'Accepted');
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
@@ -71,6 +103,26 @@ const Dashboard = () => {
 
                     {/* Middle Dashboard Content */}
                     <div className="lg:col-span-9 space-y-10">
+                        {/* Map Section - Only visible during active donation */}
+                        {(acceptedRequestForPatient || isSharing) && (
+                            <div className="space-y-4">
+                                <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                                    <span className="w-3 h-3 bg-red-600 rounded-full animate-pulse" />
+                                    Live Tracking
+                                </h3>
+                                <LiveMap
+                                    donorLocation={user?.role === 'Patient' ? donorLocation : null}
+                                    hospitalLocation={acceptedRequestForPatient ? [acceptedRequestForPatient.location.coordinates[1], acceptedRequestForPatient.location.coordinates[0]] : null}
+                                    hospitalName={acceptedRequestForPatient?.hospitalName || "Donation Center"}
+                                />
+                                {user?.role === 'Patient' && (
+                                    <div className="bg-white p-4 rounded-2xl border border-gray-100 text-sm font-bold text-gray-600">
+                                        Donor is on the way. Please stay reachable at your phone number.
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {user?.role === 'Patient' ? (
                             <div className="bg-primary-600 p-10 rounded-[32px] shadow-2xl shadow-primary-200 relative overflow-hidden group">
                                 <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -89,10 +141,15 @@ const Dashboard = () => {
                             <div className="bg-green-600 p-10 rounded-[32px] shadow-2xl shadow-green-200 relative overflow-hidden group">
                                 <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
                                 <div className="relative z-10 max-w-lg">
-                                    <h2 className="text-3xl font-black text-white mb-4 tracking-tight leading-none">You're Saving Lives!</h2>
-                                    <p className="text-green-100 mb-8 font-medium text-lg leading-relaxed opacity-90">Your status is currently set to AVAILABLE. We will notify you of nearby matches instantly.</p>
-                                    <button className="bg-white text-green-600 font-black py-4 px-10 rounded-2xl shadow-xl hover:shadow-2xl transition-all transform active:scale-95 text-lg">
-                                        Update Availability
+                                    <h2 className="text-3xl font-black text-white mb-4 tracking-tight leading-none">Ready to Save a Life?</h2>
+                                    <p className="text-green-100 mb-8 font-medium text-lg leading-relaxed opacity-90">
+                                        {isSharing ? "You are currently sharing your live location with the patient." : "Accept a request and start tracking to help the patient know you're coming."}
+                                    </p>
+                                    <button
+                                        onClick={() => setIsSharing(!isSharing)}
+                                        className={`${isSharing ? 'bg-red-500' : 'bg-white'} ${isSharing ? 'text-white' : 'text-green-600'} font-black py-4 px-10 rounded-2xl shadow-xl hover:shadow-2xl transition-all transform active:scale-95 text-lg`}
+                                    >
+                                        {isSharing ? 'Stop Tracking' : 'Start Live Tracking'}
                                     </button>
                                 </div>
                             </div>
@@ -131,19 +188,23 @@ const Dashboard = () => {
                                 ) : (
                                     <>
                                         {matchingRequests.urgentRequests?.map(req => (
-                                            <div key={req._id} className="bg-red-50 p-6 rounded-3xl border border-red-100">
+                                            <div key={req._id} className={`p-6 rounded-3xl border ${req.status === 'Accepted' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
                                                 <div className="flex justify-between items-center mb-4">
-                                                    <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter animate-pulse">Extreme Urgency</span>
-                                                    <span className="text-red-900 font-black text-xl">{req.requiredBloodGroup}</span>
+                                                    <span className={`${req.status === 'Accepted' ? 'bg-green-600' : 'bg-red-600'} text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter`}>
+                                                        {req.status === 'Accepted' ? 'Assigned to You' : 'Extreme Urgency'}
+                                                    </span>
+                                                    <span className="text-gray-900 font-black text-xl">{req.requiredBloodGroup}</span>
                                                 </div>
-                                                <h4 className="font-black text-red-900 text-lg mb-1">{req.hospitalName}</h4>
-                                                <p className="text-red-700/70 text-sm mb-6">{req.reason}</p>
-                                                <button
-                                                    onClick={() => handleAccept(req._id)}
-                                                    className="w-full bg-red-600 text-white font-black py-3 rounded-2xl hover:bg-red-700 transition-all"
-                                                >
-                                                    Accept & Help
-                                                </button>
+                                                <h4 className="font-black text-gray-900 text-lg mb-1">{req.hospitalName}</h4>
+                                                <p className="text-gray-500 text-sm mb-6">{req.reason}</p>
+                                                {req.status === 'Pending' && (
+                                                    <button
+                                                        onClick={() => handleAccept(req._id)}
+                                                        className="w-full bg-red-600 text-white font-black py-3 rounded-2xl hover:bg-red-700 transition-all"
+                                                    >
+                                                        Accept & Help
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
                                         {matchingRequests.normalRequests?.map(req => (

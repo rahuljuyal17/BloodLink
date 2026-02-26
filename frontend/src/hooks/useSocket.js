@@ -7,7 +7,7 @@ let socket;
 
 const useSocket = () => {
     const { user, isAuthenticated } = useAuthStore();
-    const { fetchMyRequests, fetchMatchingRequests } = useRequestStore();
+    const { fetchMyRequests, fetchMatchingRequests, setDonorLocation } = useRequestStore();
 
     useEffect(() => {
         if (isAuthenticated && user) {
@@ -36,13 +36,24 @@ const useSocket = () => {
                 }
             });
 
+            socket.on('donor-location-update', (location) => {
+                console.log('Donor location received:', location);
+                setDonorLocation(location);
+            });
+
             return () => {
                 socket.disconnect();
             };
         }
     }, [isAuthenticated, user]);
 
-    return socket;
+    const emitLocation = (patientId, location) => {
+        if (socket) {
+            socket.emit('update-location', { patientId, location });
+        }
+    };
+
+    return { socket, emitLocation };
 };
 
 export default useSocket;

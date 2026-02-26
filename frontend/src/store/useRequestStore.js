@@ -4,8 +4,11 @@ import axios from 'axios';
 const useRequestStore = create((set, get) => ({
     myRequests: [],
     matchingRequests: { urgentRequests: [], normalRequests: [] },
+    donorLocation: null,
     loading: false,
     error: null,
+
+    setDonorLocation: (coords) => set({ donorLocation: coords }),
 
     createRequest: async (requestData) => {
         set({ loading: true, error: null });
